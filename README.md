@@ -6,6 +6,7 @@ A private home on the web for six roommates — **Rohit, Jagan, Bharath, Surya, 
 - **Washing machine** — one machine, one person per day. Calendar with green (free), red (booked, with the booker's face) and grey (past / not open yet). Bookable window: **today + the next 5 days** (6 dates, Asia/Kolkata), rolling every midnight. Cancel your own booking; Rohit can manage anyone's. History kept.
 - **Room cleaning** — Rohit assigns duties (floor, wall, bathroom, dusting, sweeping, mopping or a custom task) to anyone on any date, with optional instructions, and can edit, reassign or delete them. Members see their own duties and mark them done; status updates live; assignees get a notification.
 - **Group chat** — real-time messages, faces, timestamps, emoji, typing indicator, online status, history.
+- **Home / College status** — each member sets their own 🏠 At Home or 🎓 At College; shown live with faces on the dashboard and Members page.
 - **Members**, **notifications** (new menu, votes, bookings, cancellations, chat — coalesced, no duplicates), **settings** (bio, optional PIN; Rohit: PIN resets, sign-out-everywhere, backup & restore).
 
 Rohit is the only administrator, but the app always shows him simply as "Rohit".
@@ -36,9 +37,10 @@ Put the originals in the project root as `rohit.jpg`, `jagan.jpg`, … (any of j
 
 ## Tests
 ```bash
-npm test            # 121 server integration tests against the local test DB (auth, cooking, washing, cleaning, chat, realtime, concurrency)
-npm run build && NODE_ENV=production COOKIE_SECURE=false PORT=4173 npm start   # terminal 1
-npm run test:e2e    # terminal 2 — two real browsers: live sync, persistence, responsive checks
+npm test            # 129 server integration tests against the local test DB (auth, cooking, washing, cleaning, chat, realtime, concurrency)
+# Run E2E against the TEST database so your own data (and PINs) are untouched:
+npm run build && DATABASE_URL=postgres://postgres@localhost:55432/homesweethome_test NODE_ENV=production COOKIE_SECURE=false PORT=4174 npm start   # terminal 1
+node e2e/smoke.mjs http://localhost:4174   # terminal 2 (needs no PINs set and a free washing day) — two real browsers: live sync, persistence, responsive checks
 ```
 Results: [docs/TESTING.md](docs/TESTING.md).
 

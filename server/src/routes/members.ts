@@ -3,12 +3,12 @@ import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Router, type Request } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import type { Member, PublicMember } from '../../../shared/types.js';
+import type { Member, MemberLocation, PublicMember } from '../../../shared/types.js';
 import { destroyMemberSessions, hashPin, PIN_RE, requireAuth, verifyPin } from '../auth.js';
 import { config } from '../config.js';
 import { query, type Db } from '../db.js';
 import { HttpError, notFound } from '../errors.js';
-import { isOnline, revokeMemberSockets } from '../realtime.js';
+import { broadcast, isOnline, revokeMemberSockets } from '../realtime.js';
 import { parse, z } from '../validate.js';
 
 // ---- Shared member serialisation (also used by routes/auth.ts) ---------------
@@ -20,9 +20,11 @@ interface MemberRow {
   bio: string;
   last_seen_at: Date | null;
   has_pin: boolean;
+  location: MemberLocation | null;
+  location_updated_at: Date | null;
 }
 
-const MEMBER_COLUMNS = 'id, slug, name, is_admin, bio, last_seen_at, (pin_hash IS NOT NULL) AS has_pin';
+const MEMBER_COLUMNS = 'id, slug, name, is_admin, bio, last_seen_at, (pin_hash IS NOT NULL) AS has_pin, location, location_updated_at';
 
 const AVATAR_TTL_MS = 60_000;
 const avatarCache = new Map<string, { at: number; url: string | null }>();
@@ -53,6 +55,8 @@ async function toMember(r: MemberRow): Promise<Member> {
     bio: r.bio,
     online: isOnline(r.id),
     lastSeenAt: r.last_seen_at ? r.last_seen_at.toISOString() : null,
+    location: r.location,
+    locationUpdatedAt: r.location_updated_at ? r.location_updated_at.toISOString() : null,
   };
 }
 
@@ -111,6 +115,17 @@ export function membersRouter(): Router {
   router.patch('/me', async (req, res) => {
     const { bio } = parse(bioSchema, req.body);
     await query('UPDATE members SET bio = $2 WHERE id = $1', [req.member!.id, bio]);
+    res.json({ member: await getMemberOrThrow(req.member!.id) });
+  });
+
+  // Home / College status — always the signed-in member's own row (no member id is accepted).
+  router.put('/me/location', async (req, res) => {
+    const { location } = parse(z.object({ location: z.enum(['home', 'college']) }), req.body);
+    const { rows } = await query<{ at: Date }>(
+      'UPDATE members SET location = $2, location_updated_at = now() WHERE id = $1 RETURNING location_updated_at AS at',
+      [req.member!.id, location],
+    );
+    broadcast('member:location', { memberId: req.member!.id, location, updatedAt: rows[0].at.toISOString() });
     res.json({ member: await getMemberOrThrow(req.member!.id) });
   });
 

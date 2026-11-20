@@ -34,6 +34,8 @@ const schemas = {
     id: memberId,
     bio: z.string().max(280).default(''),
     last_seen_at: tsNull.default(null),
+    location: z.enum(['home', 'college']).nullable().default(null),
+    location_updated_at: tsNull.default(null),
     created_at: ts.optional(),
   }),
   cooking_menus: z.object({
@@ -152,7 +154,7 @@ export function parseBackup(data: unknown): BackupFile {
 
 // ---- Export ----------------------------------------------------------------
 const EXPORT_SQL: Record<BackupTable, string> = {
-  members: 'SELECT id, slug, name, is_admin, bio, last_seen_at, created_at FROM members ORDER BY id',
+  members: 'SELECT id, slug, name, is_admin, bio, last_seen_at, location, location_updated_at, created_at FROM members ORDER BY id',
   cooking_menus: `SELECT id, menu_date, title, description, image, image_mime, status, created_by,
                          created_at, updated_at, closed_at FROM cooking_menus ORDER BY id`,
   cooking_votes: 'SELECT menu_id, member_id, choice, created_at, updated_at FROM cooking_votes ORDER BY menu_id, member_id',
@@ -238,10 +240,12 @@ export async function importData(data: unknown, client: pg.PoolClient): Promise<
   for (const m of members) {
     const ref = known.get(m.id)!;
     await client.query(
-      `INSERT INTO members (id, slug, name, is_admin, bio, last_seen_at, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7::timestamptz, now()))
-       ON CONFLICT (id) DO UPDATE SET bio = EXCLUDED.bio, last_seen_at = EXCLUDED.last_seen_at`,
-      [m.id, ref.slug, ref.name, ref.isAdmin, m.bio, m.last_seen_at, m.created_at ?? null],
+      `INSERT INTO members (id, slug, name, is_admin, bio, last_seen_at, location, location_updated_at, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, CASE WHEN $7::text IS NULL THEN NULL ELSE COALESCE($8::timestamptz, now()) END,
+               COALESCE($9::timestamptz, now()))
+       ON CONFLICT (id) DO UPDATE SET bio = EXCLUDED.bio, last_seen_at = EXCLUDED.last_seen_at,
+               location = EXCLUDED.location, location_updated_at = EXCLUDED.location_updated_at`,
+      [m.id, ref.slug, ref.name, ref.isAdmin, m.bio, m.last_seen_at, m.location, m.location_updated_at, m.created_at ?? null],
     );
   }
 

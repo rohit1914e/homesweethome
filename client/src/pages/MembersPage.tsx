@@ -1,4 +1,5 @@
 import { Portrait } from '@/components/Portrait';
+import { StatusChip, StatusSelector } from '@/components/Status';
 import { PageHeader, Skeleton } from '@/components/ui';
 import { lastSeenPhrase } from '@/components/when';
 import { usePresenceSync } from '@/features/chat/chatStore';
@@ -11,6 +12,10 @@ export default function MembersPage() {
   return (
     <div>
       <PageHeader title="Members" description="The six of us." />
+      <div className="mb-6 max-w-sm">
+        <p className="mb-2 text-sm font-semibold">Your status</p>
+        <StatusSelector />
+      </div>
       {isPending ? (
         <Skeleton className="h-96" />
       ) : (
@@ -26,6 +31,7 @@ export default function MembersPage() {
                   {m.name}
                   {m.id === me?.id && <span className="ml-2 text-sm font-medium text-dusk">(you)</span>}
                 </p>
+                <div className="my-1"><StatusChip location={m.location} /></div>
                 <p className={`text-sm ${m.online ? 'text-leaf' : 'text-dusk'}`}>{m.online ? 'Online now' : lastSeenPhrase(m.lastSeenAt)}</p>
                 {m.bio && <p className="mt-1.5 line-clamp-3 text-sm text-dusk">{m.bio}</p>}
               </div>

@@ -87,6 +87,11 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   useSocketEvent('booking:changed', () => {
     queryClient.invalidateQueries({ queryKey: ['washing'] });
   });
+  useSocketEvent('member:location', ({ memberId, location, updatedAt }) => {
+    const apply = (m: Member) => (m.id === memberId ? { ...m, location, locationUpdatedAt: updatedAt } : m);
+    queryClient.setQueryData<Member[]>(qk.members, (old) => old?.map(apply));
+    queryClient.setQueryData<Member>(qk.me, (old) => (old ? apply(old) : old));
+  });
   useSocketEvent('presence:state', ({ online }) => {
     const ids = new Set(online);
     patchMembers((m) => ({ ...m, online: ids.has(m.id) }));

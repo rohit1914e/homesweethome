@@ -26,6 +26,8 @@
   /* Meaningful states */
   --color-leaf: #5cc78b;       /* available / want */
   --color-leaf-soft: #5cc78b22;
+  --color-sky: #6fa8f5;        /* at college */
+  --color-sky-soft: #6fa8f522;
   --color-chili: #e8655c;      /* booked / don't want / danger */
   --color-chili-soft: #e8655c22;
   --color-ash: #4b4455;        /* past / unavailable */

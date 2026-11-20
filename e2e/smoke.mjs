@@ -46,6 +46,17 @@ try {
   await jagan.getByRole('heading', { level: 1, name: 'Jagan' }).waitFor({ timeout: 8000 });
   check('dashboard greets the signed-in member', true);
 
+  // ---- Home / College status: Jagan sets "At College", Rohit's dashboard updates live
+  await rohit.goto('/');
+  const jaganOnRohit = rohit.getByRole('list', { name: "Who's where" }).locator('li', { hasText: 'Jagan' });
+  await jaganOnRohit.waitFor();
+  await jagan.getByRole('group', { name: 'Your status' }).getByRole('button', { name: /At College/ }).click();
+  await jaganOnRohit.getByText('At College').waitFor({ timeout: 8000 });
+  check('Rohit sees Jagan’s “At College” status live', true);
+  await jagan.reload();
+  const pressedCollege = await jagan.getByRole('group', { name: 'Your status' }).getByRole('button', { name: /At College/ }).getAttribute('aria-pressed');
+  check('status persists after refresh', pressedCollege === 'true');
+
   // ---- Cooking: Rohit publishes, Jagan sees it live and votes, Rohit sees the tally live
   const title = `Rice + Sambar ${Date.now() % 10000}`;
   await jagan.goto('/cooking');

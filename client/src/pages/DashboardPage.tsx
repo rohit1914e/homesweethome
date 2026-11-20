@@ -3,7 +3,8 @@ import { CookingPot, MessagesSquare, Sparkles, WashingMachine } from 'lucide-rea
 import { Link } from 'react-router-dom';
 import { Avatar } from '@/components/Avatar';
 import { Widget } from '@/components/ErrorBoundary';
-import { Skeleton } from '@/components/ui';
+import { StatusChip, StatusSelector } from '@/components/Status';
+import { Card, Skeleton } from '@/components/ui';
 import { greetingFor, roomHour } from '@/components/when';
 import { usePresenceSync } from '@/features/chat/chatStore';
 import { useMe, useMembers, useMeta } from '@/lib/queries';
@@ -64,6 +65,22 @@ export default function DashboardPage() {
           </Link>
         ))}
       </nav>
+
+      <Card aria-labelledby="where-title" className="grid gap-5 md:grid-cols-[16rem_minmax(0,1fr)] md:items-center">
+        <div>
+          <h2 id="where-title" className="mb-2 text-lg font-bold">Where are you?</h2>
+          <StatusSelector />
+        </div>
+        <ul className="grid grid-cols-3 gap-x-2 gap-y-4 sm:grid-cols-6" aria-label="Who's where">
+          {members.map((m) => (
+            <li key={m.id} className="flex flex-col items-center gap-1.5 text-center">
+              <Avatar member={m} size="md" />
+              <span className="text-sm font-semibold">{m.id === me?.id ? 'You' : m.name}</span>
+              <StatusChip location={m.location} size="xs" />
+            </li>
+          ))}
+        </ul>
+      </Card>
 
       <section aria-labelledby="kitchen-title">
         <div className="mb-3 flex items-baseline justify-between">

@@ -13,12 +13,17 @@ export interface PublicMember {
   hasPin: boolean;
 }
 
+export type MemberLocation = 'home' | 'college';
+
 export interface Member extends PublicMember {
   /** Used only to decide what controls to show. Never render "Admin" as a label. */
   isAdmin: boolean;
   bio: string;
   online: boolean;
   lastSeenAt: string | null;
+  /** Home / College status set by the member themself; null = not set yet. */
+  location: MemberLocation | null;
+  locationUpdatedAt: string | null;
 }
 
 export interface ApiErrorBody {
@@ -135,6 +140,7 @@ export interface ServerToClientEvents {
   'presence:update': (p: { memberId: number; online: boolean; lastSeenAt: string | null }) => void;
   'menu:changed': (p: { menuId: number; action: MenuAction }) => void;
   'booking:changed': (p: { bookingId: number; date: string; action: 'created' | 'cancelled' }) => void;
+  'member:location': (p: { memberId: number; location: MemberLocation; updatedAt: string }) => void;
   'cleaning:changed': (p: { taskId: number; action: 'created' | 'updated' | 'deleted' | 'completed' | 'reopened' }) => void;
   'chat:message': (m: ChatMessage) => void;
   'chat:typing': (p: { memberId: number; typing: boolean }) => void;
