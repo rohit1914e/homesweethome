@@ -14,6 +14,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const CookingPage = lazy(() => import('./pages/CookingPage'));
 const WashingPage = lazy(() => import('./pages/WashingPage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
+const CleaningPage = lazy(() => import('./pages/CleaningPage'));
 const MembersPage = lazy(() => import('./pages/MembersPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
@@ -54,6 +55,7 @@ function RequireMember() {
             <Route path="cooking" element={<CookingPage />} />
             <Route path="washing" element={<WashingPage />} />
             <Route path="chat" element={<ChatPage />} />
+            <Route path="cleaning" element={<CleaningPage />} />
             <Route path="members" element={<MembersPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFoundPage />} />

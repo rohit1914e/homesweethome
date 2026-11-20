@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { CookingPot, MessagesSquare, WashingMachine } from 'lucide-react';
+import { CookingPot, MessagesSquare, Sparkles, WashingMachine } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '@/components/Avatar';
 import { Widget } from '@/components/ErrorBoundary';
@@ -12,6 +12,7 @@ import { formatDay } from '@/lib/time';
 const TodayMenuCard = lazy(() => import('@/features/cooking/TodayMenuCard'));
 const WeekStrip = lazy(() => import('@/features/washing/WeekStrip'));
 const RecentMessages = lazy(() => import('@/features/chat/RecentMessages'));
+const CleaningCard = lazy(() => import('@/features/cleaning/CleaningCard'));
 
 function Slot({ label, children, h = 'h-48' }: { label: string; children: React.ReactNode; h?: string }) {
   const fallback = <Skeleton className={h} />;
@@ -51,10 +52,11 @@ export default function DashboardPage() {
         </Link>
       </header>
 
-      <nav aria-label="Quick links" className="grid grid-cols-3 gap-2 sm:hidden">
+      <nav aria-label="Quick links" className="grid grid-cols-4 gap-2 sm:hidden">
         {[
           { to: '/cooking', label: 'Cooking', Icon: CookingPot },
           { to: '/washing', label: 'Washing', Icon: WashingMachine },
+          { to: '/cleaning', label: 'Cleaning', Icon: Sparkles },
           { to: '/chat', label: 'Chat', Icon: MessagesSquare },
         ].map(({ to, label, Icon }) => (
           <Link key={to} to={to} className="flex flex-col items-center gap-1 rounded-chip border border-seam bg-room py-3 text-sm font-semibold">
@@ -75,6 +77,7 @@ export default function DashboardPage() {
         <Slot label="Washing machine"><WeekStrip /></Slot>
         <Slot label="Group chat"><RecentMessages limit={4} /></Slot>
       </div>
+      <Slot label="Room cleaning" h="h-32"><CleaningCard /></Slot>
     </div>
   );
 }

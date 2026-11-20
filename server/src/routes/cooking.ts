@@ -151,16 +151,16 @@ router.get('/menus', async (req, res) => {
   const { before, limit } = parse(historySchema, req.query);
   let rows: MenuRow[];
   if (before === undefined) {
-    ({ rows } = await query<MenuRow>(`${MENU_SELECT} ORDER BY m.menu_date DESC, m.id DESC LIMIT $1`, [limit + 1]));
+    ({ rows } = await query<MenuRow>(`${MENU_SELECT} WHERE m.menu_date >= room_today() - 1 ORDER BY m.menu_date DESC, m.id DESC LIMIT $1`, [limit + 1]));
   } else {
     // Keyset on (menu_date, id). If the cursor menu was deleted meanwhile, fall back to id order.
     const cursor = await query<{ menu_date: string }>('SELECT menu_date FROM cooking_menus WHERE id = $1', [before]);
     ({ rows } = cursor.rows[0]
       ? await query<MenuRow>(
-          `${MENU_SELECT} WHERE (m.menu_date, m.id) < ($1::date, $2::int) ORDER BY m.menu_date DESC, m.id DESC LIMIT $3`,
+          `${MENU_SELECT} WHERE m.menu_date >= room_today() - 1 AND (m.menu_date, m.id) < ($1::date, $2::int) ORDER BY m.menu_date DESC, m.id DESC LIMIT $3`,
           [cursor.rows[0].menu_date, before, limit + 1],
         )
-      : await query<MenuRow>(`${MENU_SELECT} WHERE m.id < $1 ORDER BY m.menu_date DESC, m.id DESC LIMIT $2`, [
+      : await query<MenuRow>(`${MENU_SELECT} WHERE m.menu_date >= room_today() - 1 AND m.id < $1 ORDER BY m.menu_date DESC, m.id DESC LIMIT $2`, [
           before,
           limit + 1,
         ]));

@@ -25,12 +25,26 @@ async function waitForDatabase(timeoutMs = 60_000): Promise<void> {
   }
 }
 
+/** Cooking history is kept for 2 days (today + yesterday): purge at startup and every hour. */
+function startCookingPurge(intervalMs = 3_600_000): () => void {
+  const run = () =>
+    pool
+      .query<{ n: number }>('SELECT purge_old_cooking() AS n')
+      .then((r) => r.rows[0].n && console.log(`[cooking] purged ${r.rows[0].n} menu(s) older than yesterday`))
+      .catch((err) => console.error('[cooking] purge failed:', err.message));
+  void run();
+  const t = setInterval(run, intervalMs);
+  t.unref();
+  return () => clearInterval(t);
+}
+
 export async function startServer(opts: { port?: number; host?: string } = {}) {
   assertConfig();
   await waitForDatabase();
   const applied = await migrate();
   if (applied.length) console.log(`[db] applied migrations: ${applied.join(', ')}`);
   await seedMembers();
+  const stopPurge = startCookingPurge();
 
   const server = createServer(createApp());
   initRealtime(server);
@@ -52,6 +66,7 @@ export async function startServer(opts: { port?: number; host?: string } = {}) {
     server,
     async close() {
       stopCleanup();
+      stopPurge();
       const { getIO } = await import('./realtime.js');
       await new Promise<void>((r) => getIO().close(() => r()));
       await new Promise<void>((r) => server.close(() => r()));

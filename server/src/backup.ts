@@ -18,6 +18,7 @@ export const BACKUP_TABLES = [
   'chat_messages',
   'chat_reads',
   'notifications',
+  'cleaning_tasks',
 ] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
@@ -64,6 +65,19 @@ const schemas = {
     cancelled_at: tsNull,
     cancelled_by: memberId.nullable(),
   }),
+  cleaning_tasks: z.object({
+    id,
+    member_id: memberId,
+    task_date: date,
+    category: z.enum(['floor', 'wall', 'bathroom', 'dusting', 'sweeping', 'mopping', 'custom']),
+    custom_title: z.string().max(120).nullable(),
+    instructions: z.string().max(1000),
+    status: z.enum(['pending', 'done']),
+    completed_at: tsNull,
+    created_by: memberId,
+    created_at: ts,
+    updated_at: ts,
+  }),
   chat_messages: z.object({
     id,
     member_id: memberId,
@@ -91,6 +105,8 @@ const schemas = {
       'booking_created',
       'booking_cancelled',
       'chat_message',
+      'cleaning_assigned',
+      'cleaning_completed',
     ]),
     title: z.string(),
     body: z.string().default(''),
@@ -115,6 +131,7 @@ export const backupSchema = z.object({
     chat_messages: z.array(schemas.chat_messages).default([]),
     chat_reads: z.array(schemas.chat_reads).default([]),
     notifications: z.array(schemas.notifications).default([]),
+    cleaning_tasks: z.array(schemas.cleaning_tasks).default([]), // absent in older backups
   }),
 });
 
@@ -145,6 +162,8 @@ const EXPORT_SQL: Record<BackupTable, string> = {
   chat_reads: 'SELECT member_id, last_read_message_id, updated_at FROM chat_reads ORDER BY member_id',
   notifications: `SELECT id, member_id, kind, title, body, link, actor_id, dedupe_key, count, created_at, read_at
                     FROM notifications ORDER BY id`,
+  cleaning_tasks: `SELECT id, member_id, task_date, category, custom_title, instructions, status, completed_at,
+                          created_by, created_at, updated_at FROM cleaning_tasks ORDER BY id`,
 };
 
 function jsonValue(v: unknown): unknown {
@@ -231,7 +250,7 @@ export async function importData(data: unknown, client: pg.PoolClient): Promise<
   await client.query('ALTER TABLE cooking_votes DISABLE TRIGGER cooking_votes_require_open_menu');
 
   await client.query(
-    'TRUNCATE notifications, chat_reads, chat_messages, washing_bookings, cooking_votes, cooking_menus RESTART IDENTITY',
+    'TRUNCATE cleaning_tasks, notifications, chat_reads, chat_messages, washing_bookings, cooking_votes, cooking_menus RESTART IDENTITY',
   );
 
   for (const m of t.cooking_menus) {
@@ -270,10 +289,17 @@ export async function importData(data: unknown, client: pg.PoolClient): Promise<
     t.notifications,
   );
 
+  await insertJson(
+    client,
+    'cleaning_tasks',
+    ['id', 'member_id', 'task_date', 'category', 'custom_title', 'instructions', 'status', 'completed_at', 'created_by', 'created_at', 'updated_at'],
+    t.cleaning_tasks,
+  );
+
   await client.query('ALTER TABLE washing_bookings ENABLE TRIGGER washing_bookings_in_window');
   await client.query('ALTER TABLE cooking_votes ENABLE TRIGGER cooking_votes_require_open_menu');
 
-  for (const table of ['cooking_menus', 'washing_bookings', 'chat_messages', 'notifications']) {
+  for (const table of ['cooking_menus', 'washing_bookings', 'chat_messages', 'notifications', 'cleaning_tasks']) {
     await resetSequence(client, table);
   }
 
@@ -285,5 +311,6 @@ export async function importData(data: unknown, client: pg.PoolClient): Promise<
     chat_messages: t.chat_messages.length,
     chat_reads: t.chat_reads.length,
     notifications: t.notifications.length,
+    cleaning_tasks: t.cleaning_tasks.length,
   };
 }

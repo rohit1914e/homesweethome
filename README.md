@@ -2,8 +2,9 @@
 
 A private home on the web for six roommates — **Rohit, Jagan, Bharath, Surya, Bazith and Dharun**.
 
-- **Cooking** — Rohit publishes the day's menu (with an optional photo); everyone answers *OK, I want this* or *I don't want this*. Live tally, the six faces with their answers, close/reopen voting, full history.
+- **Cooking** — Rohit publishes the day's menu (with an optional photo); everyone answers *OK, I want this* or *I don't want this*. Live tally, the six faces with their answers, close/reopen voting, history of today and yesterday (older menus and their votes are deleted automatically every hour).
 - **Washing machine** — one machine, one person per day. Calendar with green (free), red (booked, with the booker's face) and grey (past / not open yet). Bookable window: **today + the next 5 days** (6 dates, Asia/Kolkata), rolling every midnight. Cancel your own booking; Rohit can manage anyone's. History kept.
+- **Room cleaning** — Rohit assigns duties (floor, wall, bathroom, dusting, sweeping, mopping or a custom task) to anyone on any date, with optional instructions, and can edit, reassign or delete them. Members see their own duties and mark them done; status updates live; assignees get a notification.
 - **Group chat** — real-time messages, faces, timestamps, emoji, typing indicator, online status, history.
 - **Members**, **notifications** (new menu, votes, bookings, cancellations, chat — coalesced, no duplicates), **settings** (bio, optional PIN; Rohit: PIN resets, sign-out-everywhere, backup & restore).
 
@@ -30,9 +31,12 @@ Migrations and the six accounts are applied automatically at startup (idempotent
 ### Profile photos
 Put the originals in the project root as `rohit.jpg`, `jagan.jpg`, … (any of jpg/jpeg/png/webp). They are git-ignored. `npm run avatars` writes 512×512 face-centred WebP files (metadata stripped) to `client/public/avatars/`, which are committed and served online. Missing photos fall back to initials.
 
+## Clearing data
+`npm run db:clear -- --yes` deletes all menus, votes, bookings, chat, cleaning duties, notifications and sessions, and keeps the six accounts (set `DATABASE_URL` to target another database).
+
 ## Tests
 ```bash
-npm test            # 110 server integration tests against the local test DB (auth, cooking, washing, chat, realtime, concurrency)
+npm test            # 121 server integration tests against the local test DB (auth, cooking, washing, cleaning, chat, realtime, concurrency)
 npm run build && NODE_ENV=production COOKIE_SECURE=false PORT=4173 npm start   # terminal 1
 npm run test:e2e    # terminal 2 — two real browsers: live sync, persistence, responsive checks
 ```

@@ -21,7 +21,8 @@
     "db:local": "node scripts/local-db.mjs",
     "db:backup": "tsx --env-file-if-exists=.env scripts/backup.ts",
     "db:restore": "tsx --env-file-if-exists=.env scripts/restore.ts",
-    "avatars": "node scripts/process-avatars.mjs"
+    "avatars": "node scripts/process-avatars.mjs",
+    "db:clear": "tsx --env-file-if-exists=.env scripts/clear-data.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

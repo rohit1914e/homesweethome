@@ -10,6 +10,7 @@ import { HttpError } from './errors.js';
 import adminRouter from './routes/admin.js';
 import authRouter from './routes/auth.js';
 import chatRouter from './routes/chat.js';
+import cleaningRouter from './routes/cleaning.js';
 import cookingRouter from './routes/cooking.js';
 import membersRouter from './routes/members.js';
 import metaRouter from './routes/meta.js';
@@ -54,6 +55,7 @@ export function createApp(): express.Express {
   app.use('/api/cooking', cookingRouter);
   app.use('/api/washing', washingRouter);
   app.use('/api/chat', chatRouter);
+  app.use('/api/cleaning', cleaningRouter);
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: { code: 'not_found', message: 'No such API endpoint.' } });
   });

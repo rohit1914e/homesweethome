@@ -71,7 +71,7 @@ export async function closeDb(): Promise<void> {
 /** Wipe all content + sessions; keep the six members but clear their PINs and bios. */
 export async function resetData(): Promise<void> {
   await sql(
-    `TRUNCATE cooking_votes, cooking_menus, washing_bookings, chat_messages, chat_reads, notifications, sessions
+    `TRUNCATE cleaning_tasks, cooking_votes, cooking_menus, washing_bookings, chat_messages, chat_reads, notifications, sessions
      RESTART IDENTITY CASCADE`,
   );
   await sql(`UPDATE members SET pin_hash = NULL, bio = ''`);

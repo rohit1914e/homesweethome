@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CookingPot, House, LogOut, MessagesSquare, Settings, Users, WashingMachine } from 'lucide-react';
+import { CookingPot, House, LogOut, MessagesSquare, Settings, Sparkles, Users, WashingMachine } from 'lucide-react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Avatar } from '@/components/Avatar';
 import { Wordmark } from '@/components/Brand';
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: House },
   { to: '/cooking', label: 'Cooking', short: 'Cooking', icon: CookingPot },
   { to: '/washing', label: 'Washing machine', short: 'Washing', icon: WashingMachine },
+  { to: '/cleaning', label: 'Room cleaning', short: 'Cleaning', icon: Sparkles },
   { to: '/chat', label: 'Group chat', short: 'Chat', icon: MessagesSquare },
   { to: '/members', label: 'Members', short: 'Members', icon: Users },
 ] as const;
@@ -104,7 +105,7 @@ export function Shell({ children }: { children: ReactNode }) {
       {/* Mobile bottom tabs */}
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-seam bg-night/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-6 border-t border-seam bg-night/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
       >
         {NAV.map(({ to, short, icon: Icon }) => (
           <NavLink
@@ -112,7 +113,7 @@ export function Shell({ children }: { children: ReactNode }) {
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium ${isActive ? 'text-lamp' : 'text-dusk'}`
+              `flex min-w-0 flex-col items-center gap-0.5 py-2.5 text-[10.5px] font-medium ${isActive ? 'text-lamp' : 'text-dusk'}`
             }
           >
             <Icon className="size-5" aria-hidden />

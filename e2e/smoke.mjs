@@ -84,6 +84,29 @@ try {
   check('the booked day is no longer bookable for others', stillBookable === 0);
   await jagan.screenshot({ path: `${OUT}/washing-mobile.png`, fullPage: true });
 
+  // ---- Room cleaning: Rohit assigns Jagan, Jagan sees it live and completes it, Rohit sees it done live
+  await jagan.goto('/cleaning');
+  await rohit.goto('/cleaning');
+  check('Jagan has no assign control', (await jagan.getByRole('button', { name: 'Assign duties' }).count()) === 0);
+  await rohit.getByRole('button', { name: 'Assign duties' }).first().click();
+  await rohit.locator('label', { hasText: 'Jagan' }).first().click();
+  await rohit.locator('label', { hasText: 'Mopping' }).click();
+  await rohit.locator('label', { hasText: 'Custom task' }).click();
+  const chore = `Clean the fridge ${Date.now() % 10000}`;
+  await rohit.getByLabel('Describe the custom task').fill(chore);
+  await rohit.getByRole('button', { name: 'Assign 2 duties' }).click();
+  await jagan.locator('main li', { hasText: chore }).waitFor({ timeout: 8000 });
+  check('Jagan sees the assigned duties live', (await jagan.locator('main li', { hasText: 'Mopping' }).count()) > 0);
+  const row = jagan.locator('main li', { hasText: chore });
+  await row.getByRole('button', { name: 'Mark done' }).click();
+  await rohit.waitForFunction(
+    (t) => [...document.querySelectorAll('section')].some((s) => s.textContent?.startsWith('Completed') && s.textContent.includes(t)),
+    chore,
+    { timeout: 8000 },
+  );
+  check('Rohit sees the task completed live', true);
+  await jagan.screenshot({ path: `${OUT}/cleaning-mobile.png`, fullPage: true });
+
   // ---- Chat: live delivery both ways, persistence
   await rohit.goto('/chat');
   await jagan.goto('/chat');
@@ -102,7 +125,7 @@ try {
   const sizes = { mobile: { width: 360, height: 780 }, tablet: { width: 820, height: 1180 }, desktop: { width: 1440, height: 900 } };
   for (const [sizeName, vp] of Object.entries(sizes)) {
     await rohit.setViewportSize(vp);
-    for (const path of ['/', '/cooking', '/washing', '/chat', '/members', '/settings']) {
+    for (const path of ['/', '/cooking', '/washing', '/cleaning', '/chat', '/members', '/settings']) {
       await rohit.goto(path);
       await rohit.waitForLoadState('networkidle');
       const overflow = await rohit.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

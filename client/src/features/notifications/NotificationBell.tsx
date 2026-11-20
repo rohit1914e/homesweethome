@@ -1,7 +1,7 @@
 // Bell + panel. Desktop: popover beside the sidebar. Mobile: sheet under the top bar.
 import { useEffect, useId, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, CookingPot, MessagesSquare, WashingMachine, X } from 'lucide-react';
+import { Bell, CheckCheck, CookingPot, MessagesSquare, Sparkles, WashingMachine, X } from 'lucide-react';
 import type { AppNotification, NotificationKind } from '@shared/types';
 import { Avatar } from '@/components/Avatar';
 import { Button, EmptyState, Skeleton } from '@/components/ui';
@@ -19,6 +19,8 @@ const KIND_ICON: Record<NotificationKind, typeof Bell> = {
   booking_created: WashingMachine,
   booking_cancelled: WashingMachine,
   chat_message: MessagesSquare,
+  cleaning_assigned: Sparkles,
+  cleaning_completed: Sparkles,
 };
 
 export function NotificationBell({ placement }: { placement: 'sidebar' | 'topbar' }) {

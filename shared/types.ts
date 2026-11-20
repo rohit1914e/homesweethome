@@ -85,6 +85,24 @@ export interface ChatMessage {
   clientId: string | null;
 }
 
+// ---- Room cleaning ---------------------------------------------------------
+export type CleaningCategory = 'floor' | 'wall' | 'bathroom' | 'dusting' | 'sweeping' | 'mopping' | 'custom';
+
+export interface CleaningTask {
+  id: number;
+  memberId: number;
+  date: string;
+  category: CleaningCategory;
+  /** Set only for category 'custom'. */
+  customTitle: string | null;
+  instructions: string;
+  status: 'pending' | 'done';
+  completedAt: string | null;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ---- Notifications ---------------------------------------------------------
 export type NotificationKind =
   | 'menu_published'
@@ -93,7 +111,9 @@ export type NotificationKind =
   | 'vote_cast'
   | 'booking_created'
   | 'booking_cancelled'
-  | 'chat_message';
+  | 'chat_message'
+  | 'cleaning_assigned'
+  | 'cleaning_completed';
 
 export interface AppNotification {
   id: number;
@@ -115,6 +135,7 @@ export interface ServerToClientEvents {
   'presence:update': (p: { memberId: number; online: boolean; lastSeenAt: string | null }) => void;
   'menu:changed': (p: { menuId: number; action: MenuAction }) => void;
   'booking:changed': (p: { bookingId: number; date: string; action: 'created' | 'cancelled' }) => void;
+  'cleaning:changed': (p: { taskId: number; action: 'created' | 'updated' | 'deleted' | 'completed' | 'reopened' }) => void;
   'chat:message': (m: ChatMessage) => void;
   'chat:typing': (p: { memberId: number; typing: boolean }) => void;
   'notification:new': (n: AppNotification) => void;

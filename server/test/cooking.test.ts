@@ -214,10 +214,10 @@ describe('voting', () => {
     expect(res.body.menu.tally).toEqual({ want: 1, dontWant: 1, pending: 4 });
   });
 
-  it('history includes past menus with their tallies, newest first, paginated', async () => {
+  it('history includes today and yesterday with their tallies, newest first, paginated', async () => {
     // Past menus cannot be created "yesterday" through the API, so insert them directly.
     const yesterday = addDays(today, -1);
-    const lastWeek = addDays(today, -7);
+    const lastWeek = yesterday; // history keeps only today + yesterday (older menus are purged)
     const [old] = await sql(
       `INSERT INTO cooking_menus (menu_date, title, created_by, status, closed_at)
        VALUES ($1, 'Old pongal', 1, 'closed', now()) RETURNING id`,
