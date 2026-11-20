@@ -1,0 +1,19 @@
+node_modules/
+client/dist/
+server/dist/
+.pgdata/
+.env
+.env.*
+!.env.example
+test-results/
+playwright-report/
+e2e/.artifacts/
+backups/
+*.log
+# Original phone photos stay local; only the processed avatars in client/public/avatars are published.
+/*.jpg
+/*.jpeg
+/*.png
+/*.webp
+/*.heic
+/photos/

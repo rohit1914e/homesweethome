@@ -1,0 +1,72 @@
+/* HomeSweetHome design tokens — "a flat at night, lit by one warm lamp".
+   Owned by the frontend agent; feature code uses these tokens only (no raw hex in components). */
+@import 'tailwindcss';
+@import '@fontsource-variable/bricolage-grotesque';
+
+@theme {
+  --font-sans: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Surfaces: deep plum night, never neutral black */
+  --color-night: #16131c;      /* page background */
+  --color-room: #1f1a27;       /* cards / panels */
+  --color-wall: #2b2435;       /* raised: inputs, hover, chips */
+  --color-seam: #3a3146;       /* borders, dividers */
+
+  /* Text */
+  --color-jasmine: #efe8dc;    /* primary text (warm white) */
+  --color-dusk: #a99fb6;       /* secondary text */
+  --color-haze: #7a7088;       /* tertiary / disabled text */
+
+  /* Lamplight: saffron/turmeric — the one accent */
+  --color-lamp: #f2b84b;
+  --color-lamp-soft: #f2b84b26;
+  --color-lamp-ink: #2a1d05;   /* text on lamp backgrounds */
+
+  /* Meaningful states */
+  --color-leaf: #5cc78b;       /* available / want */
+  --color-leaf-soft: #5cc78b22;
+  --color-chili: #e8655c;      /* booked / don't want / danger */
+  --color-chili-soft: #e8655c22;
+  --color-ash: #4b4455;        /* past / unavailable */
+
+  --radius-tile: 1.25rem;      /* big cards */
+  --radius-chip: 0.75rem;      /* inputs, buttons */
+
+  --shadow-lamp: 0 0 0 1px #f2b84b55, 0 10px 40px -12px #f2b84b55;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-night);
+  color: var(--color-jasmine);
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-lamp);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
