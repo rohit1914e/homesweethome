@@ -1,7 +1,8 @@
 /* HomeSweetHome design tokens — "a flat at night, lit by one warm lamp".
    Owned by the frontend agent; feature code uses these tokens only (no raw hex in components). */
 @import 'tailwindcss';
-@import '@fontsource-variable/bricolage-grotesque';
+/* "standard" = the full variable font: weight + optical size + width axes (display type uses opsz/wdth). */
+@import '@fontsource-variable/bricolage-grotesque/standard.css';
 
 @theme {
   --font-sans: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
@@ -15,7 +16,7 @@
   /* Text */
   --color-jasmine: #efe8dc;    /* primary text (warm white) */
   --color-dusk: #a99fb6;       /* secondary text */
-  --color-haze: #7a7088;       /* tertiary / disabled text */
+  --color-haze: #948ca6;       /* tertiary text — ≥4.5:1 on night and room */
 
   /* Lamplight: saffron/turmeric — the one accent */
   --color-lamp: #f2b84b;
@@ -31,8 +32,75 @@
 
   --radius-tile: 1.25rem;      /* big cards */
   --radius-chip: 0.75rem;      /* inputs, buttons */
+  --radius-door: 999px 999px 1.25rem 1.25rem; /* arched doorway portraits (the household motif) */
 
   --shadow-lamp: 0 0 0 1px #f2b84b55, 0 10px 40px -12px #f2b84b55;
+  --shadow-lift: 0 18px 50px -24px #000000cc;
+
+  /* Layout */
+  --sidebar-w: 15.5rem;
+  --tabbar-h: 4.25rem;
+  --topbar-h: 3.5rem;
+
+  --animate-window-light: window-light 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-rise: rise 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+
+  @keyframes window-light {
+    0% {
+      opacity: 0;
+      transform: translateY(14px);
+      filter: brightness(0.25) saturate(0);
+    }
+    45% {
+      opacity: 1;
+      filter: brightness(0.45) saturate(0.2);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+}
+
+/* Display type: big optical size, slightly condensed — used for the day name, page titles, login */
+@utility type-display {
+  font-variation-settings: 'opsz' 96, 'wdth' 84;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
+}
+@utility type-title {
+  font-variation-settings: 'opsz' 48, 'wdth' 92;
+  letter-spacing: -0.015em;
+}
+@utility door {
+  border-radius: var(--radius-door);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
 }
 
 :root {
@@ -45,6 +113,11 @@ body,
   min-height: 100%;
 }
 
+html {
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-color: var(--color-seam) transparent;
+}
+
 body {
   margin: 0;
   background: var(--color-night);
@@ -53,6 +126,12 @@ body {
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-lamp);
+  color: var(--color-lamp-ink);
 }
 
 :focus-visible {
@@ -60,13 +139,26 @@ body {
   outline-offset: 2px;
 }
 
+/* Numbers in tallies, counters and dates line up */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
+
+/* The one orchestrated entrance: login portraits arrive in a stagger. */
+@keyframes hsh-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.hsh-rise { animation: hsh-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }

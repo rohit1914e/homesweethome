@@ -17,7 +17,7 @@
     "start": "node server/dist/server/src/index.js",
     "typecheck": "tsc -p server/tsconfig.json --noEmit && tsc -p client/tsconfig.json --noEmit",
     "test": "vitest run --config server/vitest.config.ts",
-    "test:e2e": "playwright test --config e2e/playwright.config.ts",
+    "test:e2e": "node e2e/smoke.mjs",
     "db:local": "node scripts/local-db.mjs",
     "db:backup": "tsx --env-file-if-exists=.env scripts/backup.ts",
     "db:restore": "tsx --env-file-if-exists=.env scripts/restore.ts",
