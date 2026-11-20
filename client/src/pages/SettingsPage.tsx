@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Download, KeyRound, LogOut, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/Avatar';
+import { PlacesCard } from '@/features/settings/PlacesCard';
 import { Button, Card, ConfirmDialog, PageHeader, TextArea, TextField } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
 import { useSignOut } from '@/lib/auth';
@@ -18,6 +19,7 @@ export default function SettingsPage() {
       <ProfileCard />
       <PinCard />
       {me.isAdmin && <HouseSettings />}
+      {me.isAdmin && <PlacesCard />}
     </div>
   );
 }

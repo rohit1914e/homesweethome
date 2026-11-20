@@ -13,7 +13,9 @@ export interface PublicMember {
   hasPin: boolean;
 }
 
-export type MemberLocation = 'home' | 'college';
+export type MemberLocation = 'home' | 'college' | 'away' | 'unavailable';
+/** What a member can pick by hand (manual override). */
+export type ManualLocation = 'home' | 'college' | 'away';
 
 export interface Member extends PublicMember {
   /** Used only to decide what controls to show. Never render "Admin" as a label. */
@@ -22,8 +24,13 @@ export interface Member extends PublicMember {
   online: boolean;
   lastSeenAt: string | null;
   /** Home / College status set by the member themself; null = not set yet. */
+  /** Hidden (null) outside 8 AM – 3 PM IST and when not updated since today's 8 AM. */
   location: MemberLocation | null;
   locationUpdatedAt: string | null;
+  /** 'gps' = detected automatically, 'manual' = picked by hand (overrides GPS for today). */
+  locationSource: 'manual' | 'gps' | null;
+  /** The member opted in to GPS detection. Coordinates are never stored or shared. */
+  gpsEnabled: boolean;
 }
 
 export interface ApiErrorBody {
@@ -35,6 +42,17 @@ export interface Meta {
   timezone: string;
   serverTime: string;
   bookingWindow: { start: string; end: string; days: number };
+  /** Status sharing hours (IST) and whether Rohit has configured each place. Never coordinates. */
+  statusHours: { open: boolean; start: string; end: string };
+  geofence: { home: boolean; college: boolean };
+}
+
+export interface Place {
+  kind: 'home' | 'college';
+  lat: number;
+  lng: number;
+  radiusM: number;
+  updatedAt: string;
 }
 
 // ---- Cooking ---------------------------------------------------------------
@@ -140,7 +158,7 @@ export interface ServerToClientEvents {
   'presence:update': (p: { memberId: number; online: boolean; lastSeenAt: string | null }) => void;
   'menu:changed': (p: { menuId: number; action: MenuAction }) => void;
   'booking:changed': (p: { bookingId: number; date: string; action: 'created' | 'cancelled' }) => void;
-  'member:location': (p: { memberId: number; location: MemberLocation; updatedAt: string }) => void;
+  'member:location': (p: { memberId: number; location: MemberLocation | null; source: 'manual' | 'gps' | null; updatedAt: string | null }) => void;
   'cleaning:changed': (p: { taskId: number; action: 'created' | 'updated' | 'deleted' | 'completed' | 'reopened' }) => void;
   'chat:message': (m: ChatMessage) => void;
   'chat:typing': (p: { memberId: number; typing: boolean }) => void;

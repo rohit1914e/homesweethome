@@ -16,9 +16,16 @@ const check = (name, ok, detail = '') => {
 };
 const errors = [];
 
+// Status is only shared 8 AM – 3 PM IST. Browsers run at 10:30 IST today; start the server with
+// STATUS_CLOCK_OFFSET_MS printed below so its status clock agrees (see README "Tests").
+const IST = 5.5 * 3_600_000;
+const istNow = new Date(Date.now() + IST);
+export const FIXED_NOW = Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate(), 10, 30) - IST;
+const HOME_AT = { latitude: 13.0827, longitude: 80.2707 }; // test-only place (not the real home)
 const browser = await chromium.launch();
-async function member(name, viewport, mobile = false) {
-  const ctx = await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile, baseURL: BASE });
+async function member(name, viewport, mobile = false, extra = {}) {
+  const ctx = await browser.newContext({ viewport, isMobile: mobile, hasTouch: mobile, baseURL: BASE, ...extra });
+  await ctx.clock.setFixedTime(FIXED_NOW);
   const page = await ctx.newPage();
   await page.goto('/login');
   await page.getByRole('button', { name: `Sign in as ${name}` }).click();
@@ -42,7 +49,7 @@ try {
   await anon.screenshot({ path: `${OUT}/login-mobile.png`, fullPage: true });
 
   const rohit = await member('Rohit', { width: 1440, height: 900 });
-  const jagan = await member('Jagan', { width: 390, height: 844 }, true);
+  const jagan = await member('Jagan', { width: 390, height: 844 }, true, { permissions: ['geolocation'], geolocation: HOME_AT });
   await jagan.getByRole('heading', { level: 1, name: 'Jagan' }).waitFor({ timeout: 8000 });
   check('dashboard greets the signed-in member', true);
 
@@ -56,6 +63,33 @@ try {
   await jagan.reload();
   const pressedCollege = await jagan.getByRole('group', { name: 'Your status' }).getByRole('button', { name: /At College/ }).getAttribute('aria-pressed');
   check('status persists after refresh', pressedCollege === 'true');
+
+  // ---- GPS status: Rohit sets the home area; Jagan opts in and is detected At Home; Rohit sees it live
+  await rohit.goto('/settings');
+  const homeForm = rohit.getByRole('form', { name: 'Home area' });
+  await homeForm.getByLabel('Latitude').fill(String(HOME_AT.latitude));
+  await homeForm.getByLabel('Longitude').fill(String(HOME_AT.longitude));
+  await homeForm.getByLabel('Radius (metres)').fill('150');
+  await homeForm.getByRole('button', { name: 'Save home area' }).click();
+  await homeForm.getByText('Set, 150 m radius').waitFor({ timeout: 8000 });
+  check('Rohit saves the home area', true);
+  await rohit.goto('/');
+  await jagan.goto('/');
+  await jagan.getByRole('button', { name: 'Detect automatically with GPS' }).click();
+  await jagan.getByRole('button', { name: 'Allow location' }).click();
+  await jaganOnRohit.getByText('At Home').waitFor({ timeout: 10000 });
+  check('GPS detects Jagan At Home and Rohit sees it live', true);
+  await jagan.context().setGeolocation({ latitude: 13.5, longitude: 80.9 });
+  await jagan.reload();
+  await jaganOnRohit.getByText('Away').waitFor({ timeout: 10000 });
+  check('moving outside both areas shows Away', true);
+  // A member who blocks location gets a clear message and GPS stays off.
+  const bharath = await member('Bharath', { width: 820, height: 1180 });
+  await bharath.context().clearPermissions();
+  await bharath.getByRole('button', { name: 'Detect automatically with GPS' }).click();
+  await bharath.getByRole('button', { name: 'Allow location' }).click();
+  await bharath.getByText(/Location permission is blocked/).first().waitFor({ timeout: 10000 });
+  check('blocked permission shows a clear message', (await bharath.getByRole('button', { name: 'Detect automatically with GPS' }).count()) > 0);
 
   // ---- Cooking: Rohit publishes, Jagan sees it live and votes, Rohit sees the tally live
   const title = `Rice + Sambar ${Date.now() % 10000}`;

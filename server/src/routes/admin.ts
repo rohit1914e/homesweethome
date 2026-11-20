@@ -32,6 +32,37 @@ export function adminRouter(): Router {
     res.status(204).end();
   });
 
+  // ---- Places for GPS status (coordinates are visible to Rohit only) ----------
+  const placeKind = z.enum(['home', 'college']);
+  const placeSchema = z.object({
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    radiusM: z.number().int().min(25, 'Use a radius of at least 25 m.').max(10000, 'Use a radius of at most 10 km.'),
+  });
+  const toPlace = (r: { kind: 'home' | 'college'; lat: number; lng: number; radius_m: number; updated_at: Date }) => ({
+    kind: r.kind, lat: r.lat, lng: r.lng, radiusM: r.radius_m, updatedAt: r.updated_at.toISOString(),
+  });
+  router.get('/places', async (_req, res) => {
+    const { rows } = await query('SELECT kind, lat, lng, radius_m, updated_at FROM places ORDER BY kind DESC');
+    res.json({ places: rows.map(toPlace) });
+  });
+  router.put('/places/:kind', async (req, res) => {
+    const kind = parse(placeKind, req.params.kind);
+    const p = parse(placeSchema, req.body);
+    const { rows } = await query(
+      `INSERT INTO places (kind, lat, lng, radius_m, updated_by) VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (kind) DO UPDATE SET lat = EXCLUDED.lat, lng = EXCLUDED.lng, radius_m = EXCLUDED.radius_m,
+         updated_by = EXCLUDED.updated_by, updated_at = now()
+       RETURNING kind, lat, lng, radius_m, updated_at`,
+      [kind, p.lat, p.lng, p.radiusM, req.member!.id],
+    );
+    res.json({ place: toPlace(rows[0]) });
+  });
+  router.delete('/places/:kind', async (req, res) => {
+    await query('DELETE FROM places WHERE kind = $1', [parse(placeKind, req.params.kind)]);
+    res.status(204).end();
+  });
+
   router.get('/backup', async (_req, res) => {
     const data = await exportData();
     const day = new Date().toISOString().slice(0, 10);

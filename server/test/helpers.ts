@@ -74,7 +74,8 @@ export async function resetData(): Promise<void> {
     `TRUNCATE cleaning_tasks, cooking_votes, cooking_menus, washing_bookings, chat_messages, chat_reads, notifications, sessions
      RESTART IDENTITY CASCADE`,
   );
-  await sql(`UPDATE members SET pin_hash = NULL, bio = '', location = NULL, location_updated_at = NULL`);
+  await sql(`UPDATE members SET pin_hash = NULL, bio = '', location = NULL, location_updated_at = NULL, location_source = NULL, gps_enabled = false`);
+  await sql('DELETE FROM places');
 }
 
 // ---------------------------------------------------------------------------

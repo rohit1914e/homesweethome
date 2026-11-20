@@ -8,7 +8,7 @@ import { assertConfig, config } from './config.js';
 import { pool } from './db.js';
 import { migrate } from './migrate.js';
 import { initRealtime } from './realtime.js';
-import { seedMembers } from './seed.js';
+import { seedMembers, seedPlaces } from './seed.js';
 
 /** A cold-started free instance may come up before the database answers; retry for ~60 s. */
 async function waitForDatabase(timeoutMs = 60_000): Promise<void> {
@@ -44,6 +44,7 @@ export async function startServer(opts: { port?: number; host?: string } = {}) {
   const applied = await migrate();
   if (applied.length) console.log(`[db] applied migrations: ${applied.join(', ')}`);
   await seedMembers();
+  await seedPlaces();
   const stopPurge = startCookingPurge();
 
   const server = createServer(createApp());

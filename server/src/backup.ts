@@ -19,6 +19,7 @@ export const BACKUP_TABLES = [
   'chat_reads',
   'notifications',
   'cleaning_tasks',
+  'places',
 ] as const;
 export type BackupTable = (typeof BACKUP_TABLES)[number];
 
@@ -34,8 +35,10 @@ const schemas = {
     id: memberId,
     bio: z.string().max(280).default(''),
     last_seen_at: tsNull.default(null),
-    location: z.enum(['home', 'college']).nullable().default(null),
+    location: z.enum(['home', 'college', 'away', 'unavailable']).nullable().default(null),
     location_updated_at: tsNull.default(null),
+    location_source: z.enum(['manual', 'gps']).nullable().default(null),
+    gps_enabled: z.boolean().default(false),
     created_at: ts.optional(),
   }),
   cooking_menus: z.object({
@@ -66,6 +69,14 @@ const schemas = {
     created_at: ts,
     cancelled_at: tsNull,
     cancelled_by: memberId.nullable(),
+  }),
+  places: z.object({
+    kind: z.enum(['home', 'college']),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    radius_m: z.number().int().min(25).max(10000),
+    updated_by: memberId.nullable(),
+    updated_at: ts,
   }),
   cleaning_tasks: z.object({
     id,
@@ -134,6 +145,7 @@ export const backupSchema = z.object({
     chat_reads: z.array(schemas.chat_reads).default([]),
     notifications: z.array(schemas.notifications).default([]),
     cleaning_tasks: z.array(schemas.cleaning_tasks).default([]), // absent in older backups
+    places: z.array(schemas.places).default([]),
   }),
 });
 
@@ -154,7 +166,9 @@ export function parseBackup(data: unknown): BackupFile {
 
 // ---- Export ----------------------------------------------------------------
 const EXPORT_SQL: Record<BackupTable, string> = {
-  members: 'SELECT id, slug, name, is_admin, bio, last_seen_at, location, location_updated_at, created_at FROM members ORDER BY id',
+  members: `SELECT id, slug, name, is_admin, bio, last_seen_at, location, location_updated_at, location_source, gps_enabled,
+                   created_at FROM members ORDER BY id`,
+  places: 'SELECT kind, lat, lng, radius_m, updated_by, updated_at FROM places ORDER BY kind',
   cooking_menus: `SELECT id, menu_date, title, description, image, image_mime, status, created_by,
                          created_at, updated_at, closed_at FROM cooking_menus ORDER BY id`,
   cooking_votes: 'SELECT menu_id, member_id, choice, created_at, updated_at FROM cooking_votes ORDER BY menu_id, member_id',
@@ -240,12 +254,15 @@ export async function importData(data: unknown, client: pg.PoolClient): Promise<
   for (const m of members) {
     const ref = known.get(m.id)!;
     await client.query(
-      `INSERT INTO members (id, slug, name, is_admin, bio, last_seen_at, location, location_updated_at, created_at)
+      `INSERT INTO members (id, slug, name, is_admin, bio, last_seen_at, location, location_updated_at, location_source,
+                            gps_enabled, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, CASE WHEN $7::text IS NULL THEN NULL ELSE COALESCE($8::timestamptz, now()) END,
-               COALESCE($9::timestamptz, now()))
+               CASE WHEN $7::text IS NULL THEN NULL ELSE COALESCE($9::text, 'manual') END, $10, COALESCE($11::timestamptz, now()))
        ON CONFLICT (id) DO UPDATE SET bio = EXCLUDED.bio, last_seen_at = EXCLUDED.last_seen_at,
-               location = EXCLUDED.location, location_updated_at = EXCLUDED.location_updated_at`,
-      [m.id, ref.slug, ref.name, ref.isAdmin, m.bio, m.last_seen_at, m.location, m.location_updated_at, m.created_at ?? null],
+               location = EXCLUDED.location, location_updated_at = EXCLUDED.location_updated_at,
+               location_source = EXCLUDED.location_source, gps_enabled = EXCLUDED.gps_enabled`,
+      [m.id, ref.slug, ref.name, ref.isAdmin, m.bio, m.last_seen_at, m.location, m.location_updated_at, m.location_source,
+       m.gps_enabled, m.created_at ?? null],
     );
   }
 
@@ -254,7 +271,7 @@ export async function importData(data: unknown, client: pg.PoolClient): Promise<
   await client.query('ALTER TABLE cooking_votes DISABLE TRIGGER cooking_votes_require_open_menu');
 
   await client.query(
-    'TRUNCATE cleaning_tasks, notifications, chat_reads, chat_messages, washing_bookings, cooking_votes, cooking_menus RESTART IDENTITY',
+    'TRUNCATE places, cleaning_tasks, notifications, chat_reads, chat_messages, washing_bookings, cooking_votes, cooking_menus RESTART IDENTITY',
   );
 
   for (const m of t.cooking_menus) {
@@ -300,6 +317,8 @@ export async function importData(data: unknown, client: pg.PoolClient): Promise<
     t.cleaning_tasks,
   );
 
+  await insertJson(client, 'places', ['kind', 'lat', 'lng', 'radius_m', 'updated_by', 'updated_at'], t.places);
+
   await client.query('ALTER TABLE washing_bookings ENABLE TRIGGER washing_bookings_in_window');
   await client.query('ALTER TABLE cooking_votes ENABLE TRIGGER cooking_votes_require_open_menu');
 
@@ -316,5 +335,6 @@ export async function importData(data: unknown, client: pg.PoolClient): Promise<
     chat_reads: t.chat_reads.length,
     notifications: t.notifications.length,
     cleaning_tasks: t.cleaning_tasks.length,
+    places: t.places.length,
   };
 }

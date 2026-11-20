@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Avatar } from '@/components/Avatar';
 import { Widget } from '@/components/ErrorBoundary';
 import { StatusChip, StatusSelector } from '@/components/Status';
+import { useStatusOpen } from '@/lib/gps';
 import { Card, Skeleton } from '@/components/ui';
 import { greetingFor, roomHour } from '@/components/when';
 import { usePresenceSync } from '@/features/chat/chatStore';
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   const me = useMe().data;
   const today = useMeta().data?.today;
   const { members } = useMembers();
+  const statusOpen = useStatusOpen();
 
   return (
     <div className="flex flex-col gap-8">
@@ -68,7 +70,7 @@ export default function DashboardPage() {
 
       <Card aria-labelledby="where-title" className="grid gap-5 md:grid-cols-[16rem_minmax(0,1fr)] md:items-center">
         <div>
-          <h2 id="where-title" className="mb-2 text-lg font-bold">Where are you?</h2>
+          <h2 id="where-title" className="mb-2 text-lg font-bold">{statusOpen ? 'Where are you?' : "Who's where"}</h2>
           <StatusSelector />
         </div>
         <ul className="grid grid-cols-3 gap-x-2 gap-y-4 sm:grid-cols-6" aria-label="Who's where">
@@ -76,7 +78,7 @@ export default function DashboardPage() {
             <li key={m.id} className="flex flex-col items-center gap-1.5 text-center">
               <Avatar member={m} size="md" />
               <span className="text-sm font-semibold">{m.id === me?.id ? 'You' : m.name}</span>
-              <StatusChip location={m.location} size="xs" />
+              {statusOpen && <StatusChip member={m} size="xs" />}
             </li>
           ))}
         </ul>

@@ -9,7 +9,11 @@ Everything here uses only Render's **Free** instance types. `render.yaml` sets `
 4. Select the **homesweethome** repository → branch **main**. Render reads `render.yaml` and shows two resources:
    - `homesweethome` — Web Service — **Free**
    - `homesweethome-db` — PostgreSQL — **Free**
-   Give the Blueprint a name (e.g. `homesweethome`). **Check both say Free.** Then click **Apply** / **Deploy Blueprint**.
+   Give the Blueprint a name (e.g. `homesweethome`). **Check both say Free.**
+   Render also asks for two values (kept private, not in the repo):
+   - `HOME_PLACE` = `<latitude>,<longitude>,150` (your home coordinates, radius 150 m)
+   - `COLLEGE_PLACE` = leave empty for now (Rohit can add it later in **Settings → Home and college areas**)
+   Then click **Apply** / **Deploy Blueprint**.
 5. Wait for the database to become *Available* and the web service build to finish (first build ≈ 3–6 min). Logs should end with `HomeSweetHome listening on 0.0.0.0:10000 (production)` and `[db] applied migrations: 001_init.sql`.
 6. Open the web service → copy its URL (`https://homesweethome-xxxx.onrender.com`). Check `https://…onrender.com/api/health` shows `{"ok":true,"db":true}`.
 7. Open the URL, tap **Rohit**, go to **Settings → Sign-in PIN** and set a PIN (recommended — see README "Signing in").

@@ -6,6 +6,7 @@ import { Wordmark } from '@/components/Brand';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { useSignOut } from '@/lib/auth';
 import { useMe } from '@/lib/queries';
+import { GpsWatcher } from '@/lib/gps';
 import { useSocketStatus } from '@/lib/realtime';
 
 const NAV = [
@@ -26,6 +27,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-dvh">
+      <GpsWatcher />
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-seam bg-room/60 px-4 py-6 lg:flex">
         <Link to="/" className="mb-8 flex items-center gap-2 px-2" aria-label="HomeSweetHome dashboard">

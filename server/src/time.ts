@@ -19,3 +19,13 @@ export async function roomClock(db?: Db): Promise<RoomClock> {
   );
   return { today: rows[0].today, windowEnd: rows[0].window_end, serverTime: rows[0].now.toISOString() };
 }
+
+// ---- Status clock (injectable so tests can pin a time of day) ----------------
+// STATUS_CLOCK_OFFSET_MS: testing aid only (E2E runs at a fixed time of day); affects status visibility, nothing else.
+const OFFSET_MS = Number(process.env.STATUS_CLOCK_OFFSET_MS ?? 0) || 0;
+const realClock = () => new Date(Date.now() + OFFSET_MS);
+let statusClock: () => Date = realClock;
+export const statusNow = (): Date => statusClock();
+export function setStatusClockForTests(fn: (() => Date) | null): void {
+  statusClock = fn ?? realClock;
+}
