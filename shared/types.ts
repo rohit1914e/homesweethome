@@ -159,6 +159,7 @@ export interface ServerToClientEvents {
   'menu:changed': (p: { menuId: number; action: MenuAction }) => void;
   'booking:changed': (p: { bookingId: number; date: string; action: 'created' | 'cancelled' }) => void;
   'member:location': (p: { memberId: number; location: MemberLocation | null; source: 'manual' | 'gps' | null; updatedAt: string | null }) => void;
+  'member:updated': (p: { memberId: number }) => void;
   'cleaning:changed': (p: { taskId: number; action: 'created' | 'updated' | 'deleted' | 'completed' | 'reopened' }) => void;
   'chat:message': (m: ChatMessage) => void;
   'chat:typing': (p: { memberId: number; typing: boolean }) => void;
@@ -168,4 +169,14 @@ export interface ServerToClientEvents {
 
 export interface ClientToServerEvents {
   'chat:typing': (p: { typing: boolean }) => void;
+}
+
+export interface MaintenanceRun {
+  id: number;
+  startedAt: string;
+  finishedAt: string | null;
+  status: 'running' | 'succeeded' | 'failed';
+  deleted: Record<string, number>;
+  hasBackup: boolean;
+  error: string | null;
 }

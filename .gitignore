@@ -17,3 +17,6 @@ backups/
 /*.webp
 /*.heic
 /photos/
+
+# Render API key (local only)
+.render-key

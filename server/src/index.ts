@@ -7,6 +7,8 @@ import { registerChatSocket } from './chatSocket.js';
 import { assertConfig, config } from './config.js';
 import { pool } from './db.js';
 import { migrate } from './migrate.js';
+import { startKeepAlive } from './keepalive.js';
+import { startCleanupSchedule } from './maintenance.js';
 import { initRealtime } from './realtime.js';
 import { seedMembers, seedPlaces } from './seed.js';
 
@@ -51,6 +53,8 @@ export async function startServer(opts: { port?: number; host?: string } = {}) {
   initRealtime(server);
   registerChatSocket();
   const stopCleanup = startSessionCleanup();
+  const stopMaintenance = config.isTest ? () => {} : startCleanupSchedule();
+  const stopKeepAlive = config.isTest ? null : startKeepAlive();
 
   const port = opts.port ?? config.port;
   const host = opts.host ?? config.host;
@@ -68,6 +72,8 @@ export async function startServer(opts: { port?: number; host?: string } = {}) {
     async close() {
       stopCleanup();
       stopPurge();
+      stopMaintenance();
+      stopKeepAlive?.();
       const { getIO } = await import('./realtime.js');
       await new Promise<void>((r) => getIO().close(() => r()));
       await new Promise<void>((r) => server.close(() => r()));

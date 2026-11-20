@@ -3,6 +3,8 @@ import { useMutation } from '@tanstack/react-query';
 import { Download, KeyRound, LogOut, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/Avatar';
+import { CleanupCard } from '@/features/settings/CleanupCard';
+import { PhotoPicker, isUploaded } from '@/features/settings/PhotoPicker';
 import { PlacesCard } from '@/features/settings/PlacesCard';
 import { Button, Card, ConfirmDialog, PageHeader, TextArea, TextField } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
@@ -20,6 +22,7 @@ export default function SettingsPage() {
       <PinCard />
       {me.isAdmin && <HouseSettings />}
       {me.isAdmin && <PlacesCard />}
+      {me.isAdmin && <CleanupCard />}
     </div>
   );
 }
@@ -43,7 +46,7 @@ function ProfileCard() {
         <Avatar member={me} size="lg" />
         <div>
           <h2 className="text-xl font-bold">{me.name}</h2>
-          <p className="text-sm text-dusk">Your photo is set by the house.</p>
+          <div className="mt-2"><PhotoPicker name={me.name} hasUpload={isUploaded(me.avatarUrl)} /></div>
         </div>
       </div>
       <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="flex flex-col gap-3">
@@ -145,6 +148,7 @@ function HouseSettings() {
             <Avatar member={m} size="sm" />
             <span className="min-w-24 flex-1 font-semibold">{m.name}</span>
             <span className="text-xs text-dusk">{m.hasPin ? 'PIN on' : 'No PIN'}</span>
+            <PhotoPicker memberId={m.id} name={m.name} hasUpload={isUploaded(m.avatarUrl)} size="sm" />
             <Button size="sm" variant="secondary" disabled={!m.hasPin} onClick={() => setConfirm({ kind: 'pin', id: m.id, name: m.name })}>Reset PIN</Button>
             {m.id !== me.id && (
               <Button size="sm" variant="ghost" onClick={() => setConfirm({ kind: 'signout', id: m.id, name: m.name })}>Sign out everywhere</Button>

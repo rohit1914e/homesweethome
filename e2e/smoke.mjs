@@ -5,6 +5,7 @@
 // then every page is checked for horizontal overflow and console errors at mobile/tablet/desktop sizes.
 import { mkdirSync } from 'node:fs';
 import { chromium } from '@playwright/test';
+import sharp from 'sharp';
 
 const BASE = process.argv[2] ?? 'http://localhost:4173';
 const OUT = 'e2e/.artifacts';
@@ -151,6 +152,22 @@ try {
   );
   check('Rohit sees the task completed live', true);
   await jagan.screenshot({ path: `${OUT}/cleaning-mobile.png`, fullPage: true });
+
+  // ---- Profile picture: Jagan uploads a new photo, Rohit's members page shows it without reloading
+  await rohit.goto('/members');
+  const jaganImg = rohit.locator('li', { hasText: 'Jagan' }).locator('img').first();
+  const before = await jaganImg.getAttribute('src');
+  await jagan.goto('/settings');
+  const photo = await sharp({ create: { width: 640, height: 480, channels: 3, background: { r: 30, g: 140, b: 220 } } }).png().toBuffer();
+  await jagan.locator('input[type=file]').first().setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: photo });
+  await rohit.waitForFunction(
+    (b) => { const li = [...document.querySelectorAll('main li')].find((x) => x.textContent?.includes('Jagan')); const src = li?.querySelector('img')?.getAttribute('src'); return !!src && src !== b && src.startsWith('/api/members/2/photo'); },
+    before,
+    { timeout: 10000 },
+  );
+  check('Jagan’s new photo appears on Rohit’s members page live', true);
+  const photoRes = await rohit.request.get((await jaganImg.getAttribute('src')) ?? '');
+  check('uploaded photo is served as WebP', photoRes.headers()['content-type'] === 'image/webp');
 
   // ---- Chat: live delivery both ways, persistence
   await rohit.goto('/chat');

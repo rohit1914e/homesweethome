@@ -5,6 +5,8 @@ import { BackupInvalidError, exportData, importData } from '../backup.js';
 import { query, withTx } from '../db.js';
 import { HttpError, notFound } from '../errors.js';
 import { MEMBER_IDS } from '../members.js';
+import { listRuns, runBackup, runCleanup } from '../maintenance.js';
+import { photoInputSchema, removeMemberPhoto, setMemberPhoto } from '../photos.js';
 import { broadcast, revokeMemberSockets } from '../realtime.js';
 import { idParam, parse, z } from '../validate.js';
 
@@ -20,6 +22,16 @@ export function adminRouter(): Router {
 
   router.delete('/members/:id/pin', async (req, res) => {
     await query('UPDATE members SET pin_hash = NULL WHERE id = $1', [memberId(req.params.id)]);
+    res.status(204).end();
+  });
+
+  router.put('/members/:id/photo', async (req, res) => {
+    const id = memberId(req.params.id);
+    await setMemberPhoto(id, parse(photoInputSchema, req.body).image, req.member!.id);
+    res.status(204).end();
+  });
+  router.delete('/members/:id/photo', async (req, res) => {
+    await removeMemberPhoto(memberId(req.params.id));
     res.status(204).end();
   });
 
@@ -61,6 +73,25 @@ export function adminRouter(): Router {
   router.delete('/places/:kind', async (req, res) => {
     await query('DELETE FROM places WHERE kind = $1', [parse(placeKind, req.params.kind)]);
     res.status(204).end();
+  });
+
+  // ---- 6-day cleanup log ---------------------------------------------------
+  router.get('/maintenance', async (_req, res) => {
+    res.json(await listRuns());
+  });
+  router.post('/maintenance/run', async (_req, res) => {
+    const result = await runCleanup({ force: true });
+    if (result.status === 'skipped') throw new HttpError(409, 'cleanup_running', 'A cleanup is already running.');
+    if (result.status === 'failed') throw new HttpError(500, 'cleanup_failed', 'The cleanup failed and nothing was deleted.');
+    res.json(result);
+  });
+  router.get('/maintenance/:id/backup', async (req, res) => {
+    const id = parse(idParam, req.params.id);
+    const data = await runBackup(id);
+    if (!data) throw notFound('No backup is kept for that cleanup run.');
+    res.setHeader('Content-Disposition', `attachment; filename="homesweethome-cleanup-${id}.json"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.json(data);
   });
 
   router.get('/backup', async (_req, res) => {

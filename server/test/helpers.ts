@@ -76,6 +76,7 @@ export async function resetData(): Promise<void> {
   );
   await sql(`UPDATE members SET pin_hash = NULL, bio = '', location = NULL, location_updated_at = NULL, location_source = NULL, gps_enabled = false`);
   await sql('DELETE FROM places');
+  await sql('TRUNCATE member_photos, maintenance_runs RESTART IDENTITY');
 }
 
 // ---------------------------------------------------------------------------

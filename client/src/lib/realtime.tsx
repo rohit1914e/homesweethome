@@ -92,6 +92,10 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     queryClient.setQueryData<Member[]>(qk.members, (old) => old?.map(apply));
     queryClient.setQueryData<Member>(qk.me, (old) => (old ? apply(old) : old));
   });
+  useSocketEvent('member:updated', () => {
+    void queryClient.invalidateQueries({ queryKey: qk.members });
+    void queryClient.invalidateQueries({ queryKey: qk.me });
+  });
   useSocketEvent('presence:state', ({ online }) => {
     const ids = new Set(online);
     patchMembers((m) => ({ ...m, online: ids.has(m.id) }));

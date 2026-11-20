@@ -15,6 +15,7 @@ import cookingRouter from './routes/cooking.js';
 import membersRouter from './routes/members.js';
 import metaRouter from './routes/meta.js';
 import notificationsRouter from './routes/notifications.js';
+import { photoRouter } from './photos.js';
 import washingRouter from './routes/washing.js';
 
 export function createApp(): express.Express {
@@ -49,6 +50,7 @@ export function createApp(): express.Express {
 
   app.use('/api', metaRouter()); // /api/health (public), /api/meta
   app.use('/api/auth', authRouter());
+  app.use('/api/members', photoRouter()); // public GET /:id/photo (login screen)
   app.use('/api/members', membersRouter());
   app.use('/api/notifications', notificationsRouter());
   app.use('/api/admin', adminRouter());

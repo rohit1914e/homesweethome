@@ -8,6 +8,8 @@ A private home on the web for six roommates — **Rohit, Jagan, Bharath, Surya, 
 - **Group chat** — real-time messages, faces, timestamps, emoji, typing indicator, online status, history.
 - **Home / College status** — 🏠 At Home, 🎓 At College, 🚶 Away or 📍 Location unavailable, shown live with faces on the dashboard and Members page **only from 8 AM to 3 PM IST** (college hours; a status from an earlier day stays hidden until updated). Set by hand, or **automatically with GPS** (opt-in per member): the browser checks when the site opens and every 5 minutes while it stays open — nothing runs after it's closed. A manual pick overrides GPS for the day. Rohit sets the home/college areas (coordinates + radius) in Settings.
   - **Privacy:** a member's coordinates are compared with the two areas on the server and discarded — never stored, logged, or shown to anyone. Only the resulting status and its time are saved. The area coordinates are visible only to Rohit and are kept out of this public repo (`HOME_PLACE` / `COLLEGE_PLACE` env vars).
+- **Profile pictures** — every member can upload/change/reset their own photo in Settings; Rohit can manage anyone's. Uploads are checked (JPEG/PNG/WebP by file signature, ≤ 2 MB, ≤ 40 megapixels), re-encoded on the server to a 512×512 WebP with all metadata (incl. GPS) stripped, stored in PostgreSQL (Render free has no disk) and updated live everywhere.
+- **Automatic cleanup every 6 days** — removes chat messages and notifications older than 6 days, expired sign-ins and menus older than yesterday; never touches accounts, photos, status, places, bookings or cleaning duties. The removed rows are saved first (latest 3 runs downloadable by Rohit in Settings), counts are logged, and a database lock makes overlapping runs impossible.
 - **Members**, **notifications** (new menu, votes, bookings, cancellations, chat — coalesced, no duplicates), **settings** (bio, optional PIN; Rohit: PIN resets, sign-out-everywhere, backup & restore).
 
 Rohit is the only administrator, but the app always shows him simply as "Rohit".
@@ -38,7 +40,7 @@ Put the originals in the project root as `rohit.jpg`, `jagan.jpg`, … (any of j
 
 ## Tests
 ```bash
-npm test            # 137 server integration tests against the local test DB (auth, cooking, washing, cleaning, chat, realtime, concurrency)
+npm test            # 153 server integration tests against the local test DB (auth, cooking, washing, cleaning, chat, realtime, concurrency)
 # Run E2E against the TEST database so your own data (and PINs) are untouched:
 npm run build && DATABASE_URL=postgres://postgres@localhost:55432/homesweethome_test NODE_ENV=production COOKIE_SECURE=false PORT=4174 npm start   # terminal 1
 node e2e/smoke.mjs http://localhost:4174   # terminal 2 (needs no PINs set and a free washing day)

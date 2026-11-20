@@ -242,6 +242,8 @@ describe('real-time & notifications', () => {
 
   it('a failed booking (taken date) sends no notification and no event', async () => {
     await book(4, today);
+    // The successful booking notifies the other 5 asynchronously — wait for those before clearing.
+    for (let i = 0; i < 50 && (await sql('SELECT count(*)::int AS n FROM notifications'))[0].n < 5; i++) await new Promise((r) => setTimeout(r, 20));
     await sql('DELETE FROM notifications');
     const jagan = await connectSocket(c[2]);
     const got: any[] = [];

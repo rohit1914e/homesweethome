@@ -10,6 +10,7 @@ import { config } from '../config.js';
 import { query, type Db } from '../db.js';
 import { HttpError, notFound } from '../errors.js';
 import { broadcast, isOnline, revokeMemberSockets } from '../realtime.js';
+import { photoInputSchema, removeMemberPhoto, setMemberPhoto } from '../photos.js';
 import { statusNow } from '../time.js';
 import { parse, z } from '../validate.js';
 
@@ -26,9 +27,10 @@ interface MemberRow {
   location_updated_at: Date | null;
   location_source: 'manual' | 'gps' | null;
   gps_enabled: boolean;
+  photo_v: number | null;
 }
 
-const MEMBER_COLUMNS = 'id, slug, name, is_admin, bio, last_seen_at, (pin_hash IS NOT NULL) AS has_pin, location, location_updated_at, location_source, gps_enabled';
+const MEMBER_COLUMNS = 'id, slug, name, is_admin, bio, last_seen_at, (pin_hash IS NOT NULL) AS has_pin, location, location_updated_at, location_source, gps_enabled, (SELECT (extract(epoch FROM p.updated_at) * 1000)::float8 FROM member_photos p WHERE p.member_id = members.id) AS photo_v';
 
 const AVATAR_TTL_MS = 60_000;
 const avatarCache = new Map<string, { at: number; url: string | null }>();
@@ -49,7 +51,9 @@ export async function avatarUrlFor(slug: string): Promise<string | null> {
 }
 
 async function toPublic(r: MemberRow): Promise<PublicMember> {
-  return { id: r.id, slug: r.slug, name: r.name, avatarUrl: await avatarUrlFor(r.slug), hasPin: r.has_pin };
+  // An uploaded picture wins over the default one shipped with the app.
+  const avatarUrl = r.photo_v !== null ? `/api/members/${r.id}/photo?v=${Math.round(r.photo_v)}` : await avatarUrlFor(r.slug);
+  return { id: r.id, slug: r.slug, name: r.name, avatarUrl, hasPin: r.has_pin };
 }
 
 /** Readings less precise than this are ignored (the status is left as it was). */
@@ -218,6 +222,17 @@ export function membersRouter(): Router {
       if (d <= p.radius_m && (!best || d < best.d)) best = { kind: p.kind, d };
     }
     res.json({ applied: true, member: await applyStatus(id, best?.kind ?? 'away', 'gps') });
+  });
+
+  // Own profile picture (Rohit manages anyone's via /api/admin/members/:id/photo).
+  router.put('/me/photo', async (req, res) => {
+    const { image } = parse(photoInputSchema, req.body);
+    await setMemberPhoto(req.member!.id, image, req.member!.id);
+    res.json({ member: await getMemberOrThrow(req.member!.id) });
+  });
+  router.delete('/me/photo', async (req, res) => {
+    await removeMemberPhoto(req.member!.id);
+    res.json({ member: await getMemberOrThrow(req.member!.id) });
   });
 
   router.put('/me/pin', pinLimiter, async (req, res) => {

@@ -48,8 +48,15 @@ Write down: *database created on ____ → expires on ____ (+30 days) → deleted
 
 Members stay signed out after a move (sessions are deliberately not backed up) — they just tap their photo again.
 
-### Keep-awake pingers?
-An external uptime pinger every 10 min would avoid the 1-minute wake-up but keeps the service running ~24/7 (≈ 744 h — right at the 750 h limit) and does **nothing** about the 30-day database expiry. Not recommended unless the wake-up delay really bothers you.
+### Keep-awake (built in, daytime only)
+Render's free-tier docs don't forbid pinging; they say a free service sleeps after 15 min without **inbound** traffic and warn only about an *uncommonly high volume* of service-initiated traffic. One small request every 10 minutes is negligible.
+
+What the app does: while it is awake, it requests its own public URL (`RENDER_EXTERNAL_URL/api/health`, set by Render automatically) every **10 minutes, only between 07:00 and 23:00 IST**. That request comes back in through Render's edge, so it counts as inbound traffic.
+- It **cannot wake a sleeping service** (a sleeping server runs no code). The first visit of the day still takes ~1 minute; after that the site stays awake until 23:00.
+- **Hours budget:** 16 h/day ≈ 496 h/month, inside the workspace's 750 free hours. This workspace also hosts the two older *data-warehouse* free services, which share those hours. **If all 750 hours are used up, Render suspends every free service in the workspace until the next month** — that's why it is not 24/7.
+- Settings: `KEEP_AWAKE=off` disables it; `KEEP_AWAKE_HOURS=8-22` changes the window (Render → service → Environment).
+
+Free alternatives: (1) accept the 1-minute wake-up (zero risk); (2) an external free monitor such as UptimeRobot or cron-job.org hitting `/api/health` — this *can* wake the site from sleep, but the same 750-hour budget applies, so restrict it to daytime; (3) move HomeSweetHome to its own new free Hobby workspace so it doesn't share hours with other projects (it then also gets its own free database slot).
 
 ## Troubleshooting
 - **Build fails**: open the deploy log. `npm ci` needs `package-lock.json` committed (it is). Node 22 is pinned via `NODE_VERSION` / `.node-version`.
